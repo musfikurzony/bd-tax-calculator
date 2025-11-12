@@ -183,7 +183,7 @@
 
                      <!-- Investment Amount -->
                     <div class="col-span-full md:col-span-2">
-                        <label id="investmentLabel" for="otherAnnualInvestment" class="block text-sm font-medium text-gray-700">অন্যান্য বার্ষিক বিনিয়োগ (DPS, শেয়ার, ইত্যাদি Tk.) (Other Annual Investment)</label>
+                        <label id="investmentLabel" for="otherAnnualInvestment" class="block text-sm font-medium text-gray-700">অন্যান্য বার্ষিক বিনিয়োগ (DPS, শেয়ার, ইত্যাদি Tk.) (Other Annual Investment)</label>
                         <input type="number" id="otherAnnualInvestment" value="0" oninput="calculateTax()" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 p-2.5 border">
                     </div>
 
@@ -337,7 +337,7 @@
             </div>
             
             <p id="footerNote" class="text-xs text-gray-500 mt-4 border-t pt-2 text-center">
-                Calculator developed by Musfikur Rahman @ 2025.
+                Calculator developed by Musfikur Rahman - Perry Ellis Bangladesh | Copyright © 2025.
             </p>
 
         </main>
@@ -412,7 +412,7 @@
                 COL_TAX_TK: 'করের পরিমাণ (Tax Tk.)',
                 
                 // Footer
-                FOOTER_NOTE: 'Calculator developed by Musfikur Rahman @ 2025.',
+                FOOTER_NOTE: 'Calculator developed by Musfikur Rahman - Perry Ellis Bangladesh | Copyright © 2025.',
             },
             'EN': {
                 APP_TITLE: 'Dynamic Income Tax Calculator',
@@ -473,7 +473,7 @@
                 COL_TAX_TK: 'Tax Tk.',
                 
                 // Footer
-                FOOTER_NOTE: 'Calculator developed by Musfikur Rahman @ 2025.',
+                FOOTER_NOTE: 'Calculator developed by Musfikur Rahman - Perry Ellis Bangladesh | Copyright © 2025.',
             }
         };
 
@@ -857,11 +857,11 @@
                     // Dynamically set slab label based on language
                     let slabLabel;
                     if (currentLang === 'EN') {
-                        slabLabel = slab.label.replace(/পরবর্তী ৳ ([\d,]+) \(Next Tk. ([\d,]+)\)/, 'Next Tk. $2');
-                        slabLabel = slabLabel.replace(/অবশিষ্ট মোট আয় \(On Balance Income\)/, 'On Balance Income');
+                        // Extract English part from the label (e.g., "Next Tk. 3,00,000")
+                        slabLabel = slab.label.match(/\(([^)]+)\)/) ? slab.label.match(/\(([^)]+)\)/)[1] : slab.label;
                     } else { // BN
-                         slabLabel = slab.label.replace(/ \(Next Tk. [\d,]+\)/, '');
-                         slabLabel = slabLabel.replace(/ \(On Balance Income\)/, '');
+                         // Extract Bangla part from the label (e.g., "পরবর্তী ৳ 3,00,000")
+                         slabLabel = slab.label.replace(/\s\(.+?\)/, '');
                     }
 
 
@@ -888,8 +888,16 @@
             
             // 6. Final Tax Payable (Applying Minimum Tax)
             
-            // Final Tax is the higher of Net Tax Payable or Minimum Tax
-            const finalTaxPayable = Math.max(netTaxPayableBeforeMinTax, minimumTax);
+            // Tax will be Minimum Tax only if Gross Tax After Rebate is positive.
+            // If Net Tax Payable (before min tax) is 0 or negative, final tax is 0.
+            // If Net Tax Payable is > 0, compare it with Minimum Tax.
+
+            let finalTaxPayable = 0;
+            if (netTaxPayableBeforeMinTax > 0) {
+                finalTaxPayable = Math.max(netTaxPayableBeforeMinTax, minimumTax);
+            } else {
+                 finalTaxPayable = 0;
+            }
 
 
             // --- Update UI ---
