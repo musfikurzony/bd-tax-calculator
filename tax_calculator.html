@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ডাইনামিক আয়কর ক্যালকুলেটর (২০২৫-২৬)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Noto+Sans+Bengali:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans Bengali', 'Inter', sans-serif;
+            background-color: #f3f4f6;
+        }
+        .card {
+            box-shadow: 0 10px 25px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        input[type="number"]::-webkit-outer-spin-button,
+        input[type="number"]::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type="number"] {
+            -moz-appearance: textfield;
+            font-size: 1.1rem; /* Increase input size for touch targets */
+        }
+        .section-header {
+            border-left: 5px solid #10b981;
+        }
+        .accordion-button {
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+    </style>
+</head>
+<body class="p-4 sm:p-8 min-h-screen">
+
+    <div class="max-w-4xl mx-auto card bg-white rounded-xl overflow-hidden">
+        <header class="bg-teal-600 p-6">
+            <h1 class="2xl sm:text-3xl font-bold text-white mb-1">ডাইনামিক আয়কর ক্যালকুলেটর</h1>
+            <p class="text-sm text-teal-200">আয়কর বছর ২০২৫-২০২৬ (Standard Deduction পদ্ধতি)</p>
+        </header>
+
+        <main class="p-4 sm:p-6">
+
+            <!-- A. Input Section -->
+            <div class="mb-6 p-4 bg-gray-50 rounded-lg">
+                <h2 class="section-header text-xl font-semibold text-gray-800 mb-4 pl-3">১. ইনপুট ভেরিয়েবল (মান পরিবর্তন করুন)</h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <!-- Tax Exemption Limit -->
+                    <div class="col-span-full md:col-span-1">
+                        <label for="taxExemption" class="block text-sm font-medium text-gray-700">করমুক্ত সীমা (Taxpayer Exemption)</label>
+                        <select id="taxExemption" onchange="calculateTax()" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 p-2.5 border text-base">
+                            <option value="375000">সাধারণ করদাতা (৳ 3,75,000)</option>
+                            <option value="425000">নারী/৬৫+ সিনিয়র সিটিজেন (৳ 4,25,000)</option>
+                            <option value="500000">প্রতিবন্ধী/তৃতীয় লিঙ্গ (৳ 5,00,000)</option>
+                            <option value="525000">গেজেটেড মুক্তিযোদ্ধা (৳ 5,25,000)</option>
+                        </select>
+                    </div>
+
+                    <!-- Monthly Gross Salary (Replaced individual components) -->
+                    <div class="col-span-full md:col-span-1">
+                        <label for="monthlyGrossSalary" class="block text-sm font-medium text-gray-700">মাসিক গ্রস বেতন (Tk.)</label>
+                        <input type="number" id="monthlyGrossSalary" value="42000" oninput="calculateTax()" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 p-2.5 border">
+                        <p class="text-xs text-gray-500 mt-1">এখানে বেসিক ও সকল মাসিক ভাতা (HRA, MA, CA, ইত্যাদি) অন্তর্ভুক্ত।</p>
+                    </div>
+
+                    <!-- Employer's PF Contribution Rate -->
+                    <div class="col-span-full md:col-span-1">
+                        <label for="pfRate" class="block text-sm font-medium text-gray-700">এমপ্লয়ার পিএফ কন্ট্রিবিউশন রেট (যেমন: 0.05)</label>
+                        <input type="number" id="pfRate" value="0.05" step="0.01" oninput="calculateTax()" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 p-2.5 border">
+                    </div> 
+
+                    <!-- 13th Month Bonus -->
+                    <div class="col-span-full md:col-span-1 flex items-center pt-2">
+                        <input type="checkbox" id="is13thMonth" checked onchange="calculateTax()" class="h-5 w-5 text-teal-600 border-gray-300 rounded focus:ring-teal-500">
+                        <label for="is13thMonth" class="ml-2 block text-sm font-medium text-gray-700">১৩ তম মাস / উৎসব বোনাস</label>
+                    </div>
+
+                    <!-- Other Bonus Amount -->
+                    <div class="col-span-full md:col-span-1">
+                        <label for="otherBonus" class="block text-sm font-medium text-gray-700">অন্যান্য বোনাস (মোট বার্ষিক Tk.)</label>
+                        <input type="number" id="otherBonus" value="0" oninput="calculateTax()" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 p-2.5 border">
+                    </div>
+                </div>
+            </div>
+
+            <!-- B. Final Results Summary (Always visible) -->
+            <div class="mb-6 p-4 bg-teal-500 rounded-lg text-white card">
+                <h2 class="text-2xl font-bold mb-2">চূড়ান্ত প্রদেয় আয়কর</h2>
+                <div class="flex justify-between items-center border-b border-teal-300 pb-2 mb-2">
+                    <span class="text-sm font-medium">মোট বার্ষিক প্রদেয় আয়কর</span>
+                    <span id="finalTaxPayable" class="text-3xl font-extrabold">0</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-sm font-medium">মাসিক আনুমানিক কর কর্তন</span>
+                    <span id="monthlyTaxDeduction" class="text-xl font-bold">0</span>
+                </div>
+            </div>
+
+            <!-- C. Summary and Exemption Table (Collapsible) -->
+            <div class="mb-6 border border-gray-200 rounded-lg">
+                <div class="accordion-button bg-gray-100 hover:bg-gray-200 p-4 rounded-t-lg flex justify-between items-center" onclick="toggleSection('summarySection')">
+                    <h2 class="text-lg font-semibold text-gray-800">৩. চূড়ান্ত করযোগ্য আয় (Gross থেকে Deduction)</h2>
+                    <span id="summaryIcon" class="text-xl transform transition-transform duration-300">+</span>
+                </div>
+                <div id="summarySection" class="p-4 hidden">
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200 rounded-lg">
+                            <thead class="bg-gray-100">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase">বিবরণ</th>
+                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-600 uppercase">পরিমাণ (Tk.)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="exemptionTableBody" class="bg-white divide-y divide-gray-200 text-sm">
+                                <tr>
+                                    <td class="px-6 py-2 text-left">মোট Gross Annual Income</td>
+                                    <td id="totalGrossIncome" class="px-6 py-2 text-right">0</td>
+                                </tr>
+                                <tr>
+                                    <td class="px-6 py-2 text-left">বাদ: Standard Deduction (1/3 of Gross or ৳ 5,00,000)</td>
+                                    <td id="totalStandardDeduction" class="px-6 py-2 text-right text-green-700">0</td>
+                                </tr>
+                                <tr>
+                                    <td class="px-6 py-2 text-left">বাদ: Tax Exemption Limit (ব্যক্তিগত করমুক্ত সীমা)</td>
+                                    <td id="totalExemptionLimit" class="px-6 py-2 text-right text-green-700">0</td>
+                                </tr>
+                            </tbody>
+                            <tfoot class="bg-teal-50 border-t-2 border-teal-200 font-semibold">
+                                <tr>
+                                    <td class="px-6 py-3 text-left">স্ল্যাব-এর জন্য প্রকৃত করযোগ্য আয়</td>
+                                    <td id="incomeForSlabsTotal" class="px-6 py-3 text-right text-red-600">0</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- D. Standard Deduction Details (Collapsible) -->
+            <div class="mb-6 border border-gray-200 rounded-lg">
+                <div class="accordion-button bg-yellow-100 hover:bg-yellow-200 p-4 rounded-t-lg flex justify-between items-center" onclick="toggleSection('deductionSection')">
+                    <h3 class="text-lg font-semibold text-gray-800">২. Standard Deduction (বিস্তারিত)</h3>
+                    <span id="deductionIcon" class="text-xl transform transition-transform duration-300">+</span>
+                </div>
+                <div id="deductionSection" class="p-4 bg-yellow-50 hidden">
+                    <p class="text-xs text-yellow-700 mb-3">
+                        Standard Deduction হলো Gross Income-এর 1/3 অংশ বা ৳ 5,00,000, এই দুটির মধ্যে যেটি কম।
+                    </p>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-yellow-100">
+                                <tr>
+                                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase">বিবরণ</th>
+                                    <th class="px-3 py-2 text-right text-xs font-medium text-gray-600 uppercase">প্রাসঙ্গিক মান (Tk.)</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200 text-sm">
+                                <tr>
+                                    <td class="px-3 py-2 text-left font-medium">মোট বার্ষিক বেতন আয় (Gross)</td>
+                                    <td id="standardDeductionGross" class="px-3 py-2 text-right">0</td>
+                                </tr>
+                                <tr>
+                                    <td class="px-3 py-2 text-left font-medium">Standard Deduction-এর 1/3 অংশ</td>
+                                    <td id="standardDeductionOneThird" class="px-3 py-2 text-right">0</td>
+                                </tr>
+                                <tr>
+                                    <td class="px-3 py-2 text-left font-medium">Standard Deduction-এর সর্বোচ্চ সীমা</td>
+                                    <td class="px-3 py-2 text-right">5,00,000</td>
+                                </tr>
+                                <tr class="bg-yellow-100 font-semibold">
+                                    <td class="px-3 py-2 text-left font-medium text-red-600">প্রকৃত Standard Deduction</td>
+                                    <td id="standardDeductionFinal" class="px-3 py-2 text-right text-red-600">0</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- E. Tax Calculation Table (Collapsible) -->
+            <div class="mb-6 border border-gray-200 rounded-lg">
+                <div class="accordion-button bg-gray-100 hover:bg-gray-200 p-4 rounded-t-lg flex justify-between items-center" onclick="toggleSection('taxSlabSection')">
+                    <h2 class="text-lg font-semibold text-gray-800">৪. চূড়ান্ত আয়কর গণনা (স্ল্যাব অনুযায়ী)</h2>
+                    <span id="taxSlabIcon" class="text-xl transform transition-transform duration-300">+</span>
+                </div>
+                <div id="taxSlabSection" class="p-4 hidden">
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200 rounded-lg">
+                            <thead class="bg-gray-100">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase">স্ল্যাব বিবরণ</th>
+                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-600 uppercase">আয়ের হার</th>
+                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-600 uppercase">করযোগ্য আয় (Tk.)</th>
+                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-600 uppercase">করের পরিমাণ (Tk.)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="taxSlabTableBody" class="bg-white divide-y divide-gray-200 text-sm">
+                                <!-- Rows populated by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <p class="text-xs text-gray-500 mt-4 border-t pt-2">
+                **দ্রষ্টব্য:** এই ক্যালকুলেটরটি **Standard Deduction** পদ্ধতি অনুসরণ করছে। এটি বিনিয়োগের উপর কর রেয়াত (Tax Rebate) বা ন্যূনতম কর (Minimum Tax) বিবেচনা করে না।
+            </p>
+
+        </main>
+    </div>
+
+    <script>
+        const formatter = new Intl.NumberFormat('bn-BD', {
+            style: 'decimal',
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 2,
+        });
+
+        const TAX_SLABS = [
+            { limit: 300000, rate: 0.10, label: "পরবর্তী ৳ 3,00,000 (10%)" },
+            { limit: 400000, rate: 0.15, label: "পরবর্তী ৳ 4,00,000 (15%)" },
+            { limit: 500000, rate: 0.20, label: "পরবর্তী ৳ 5,00,000 (20%)" },
+            { limit: 2000000, rate: 0.25, label: "পরবর্তী ৳ 20,00,000 (25%)" },
+            { limit: Infinity, rate: 0.30, label: "অবশিষ্ট মোট আয় (30%)" }
+        ];
+
+        const STANDARD_DEDUCTION_CAP = 500000; 
+
+        function toggleSection(sectionId) {
+            const section = document.getElementById(sectionId);
+            const icon = document.getElementById(sectionId.replace('Section', 'Icon'));
+            
+            if (section.classList.contains('hidden')) {
+                section.classList.remove('hidden');
+                if (icon) icon.textContent = '−'; 
+            } else {
+                section.classList.add('hidden');
+                if (icon) icon.textContent = '+';
+            }
+        }
+
+        function calculateTax() {
+            const monthlyGrossSalary = parseFloat(document.getElementById('monthlyGrossSalary').value) || 0;
+            const is13thMonth = document.getElementById('is13thMonth').checked;
+            const otherBonus = parseFloat(document.getElementById('otherBonus').value) || 0;
+            const taxpayerExemption = parseFloat(document.getElementById('taxExemption').value) || 0;
+            const pfRate = parseFloat(document.getElementById('pfRate').value) || 0;
+
+            const annualSalary = monthlyGrossSalary * 12;
+            
+            let annualBonus = otherBonus;
+            if (is13thMonth) {
+                annualBonus += monthlyGrossSalary;
+            }
+            
+            const employerPF = annualSalary * pfRate;
+
+            const totalGrossIncome = annualSalary + annualBonus + employerPF;
+
+            const oneThirdGross = totalGrossIncome / 3;
+            const standardDeduction = Math.min(oneThirdGross, STANDARD_DEDUCTION_CAP);
+            
+            const totalTaxableSalary = Math.max(0, totalGrossIncome - standardDeduction);
+
+            let incomeForSlabs = Math.max(0, totalTaxableSalary - taxpayerExemption);
+            let totalTaxPayable = 0;
+            const taxSlabDetails = [];
+
+            // Add the initial tax-free slab detail (Taxpayer Exemption)
+            taxSlabDetails.push({
+                label: `করমুক্ত সীমা (৳ ${formatter.format(taxpayerExemption)})`,
+                rate: "0%",
+                taxable: Math.min(totalTaxableSalary, taxpayerExemption),
+                tax: 0,
+                color: 'text-green-600'
+            });
+
+            // Apply progressive tax slabs
+            TAX_SLABS.forEach(slab => {
+                let taxedInSlab = 0;
+                let taxInSlab = 0;
+
+                if (incomeForSlabs > 0) {
+                    taxedInSlab = Math.min(incomeForSlabs, slab.limit);
+                    taxInSlab = taxedInSlab * slab.rate;
+                    totalTaxPayable += taxInSlab;
+                    incomeForSlabs -= taxedInSlab;
+
+                    taxSlabDetails.push({
+                        label: slab.label,
+                        rate: `${(slab.rate * 100)}%`,
+                        taxable: taxedInSlab,
+                        tax: taxInSlab,
+                        color: ''
+                    });
+                }
+            });
+
+            // --- Update UI ---
+
+            // Update Standard Deduction Details
+            document.getElementById('standardDeductionGross').textContent = formatter.format(totalGrossIncome);
+            document.getElementById('standardDeductionOneThird').textContent = formatter.format(oneThirdGross);
+            document.getElementById('standardDeductionFinal').textContent = formatter.format(standardDeduction);
+            
+            // Update Summary Table
+            document.getElementById('totalGrossIncome').textContent = formatter.format(totalGrossIncome);
+            document.getElementById('totalStandardDeduction').textContent = formatter.format(standardDeduction);
+            document.getElementById('totalExemptionLimit').textContent = formatter.format(taxpayerExemption);
+            document.getElementById('incomeForSlabsTotal').textContent = formatter.format(Math.max(0, totalTaxableSalary - taxpayerExemption));
+
+            // Update Tax Slab Table
+            const taxSlabBody = document.getElementById('taxSlabTableBody');
+            taxSlabBody.innerHTML = taxSlabDetails.map(item => `
+                <tr class="${item.taxable === 0 ? 'text-gray-400' : 'text-gray-800'}">
+                    <td class="px-6 py-2 text-left font-medium ${item.color}">${item.label}</td>
+                    <td class="px-6 py-2 text-right">${item.rate}</td>
+                    <td class="px-6 py-2 text-right">${formatter.format(item.taxable)}</td>
+                    <td class="px-6 py-2 text-right">${formatter.format(item.tax)}</td>
+                </tr>
+            `).join('');
+
+            // Final Results
+            document.getElementById('finalTaxPayable').textContent = formatter.format(Math.max(0, totalTaxPayable));
+            document.getElementById('monthlyTaxDeduction').textContent = formatter.format(Math.max(0, totalTaxPayable) / 12);
+        }
+
+        window.onload = calculateTax;
+    </script>
+</body>
+</html>
